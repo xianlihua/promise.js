@@ -1,0 +1,14 @@
+{
+    "name": "promise.js",
+    "version": "0.0.1",
+    "description": "a promise/A+ impplement",
+    "private": false,
+    "dependencies": {},
+    "devDependencies": {
+        "promises-aplus-tests": "~2",
+        "mocha": "*"
+    },
+    "scripts": {
+        "test": "promises-aplus-tests test/aplus-adapter.js"
+    }
+}
