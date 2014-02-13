@@ -5,10 +5,10 @@
     "private": false,
     "dependencies": {},
     "devDependencies": {
-        "promises-aplus-tests": "~2",
         "mocha": "*"
     },
     "scripts": {
-        "test": "promises-aplus-tests test/aplus-adapter.js"
+        "test": "mocha ./test/test.promise.js -R dot",
+        "start": "npm run test"
     }
 }
