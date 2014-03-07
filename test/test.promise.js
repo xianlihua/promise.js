@@ -1,75 +1,75 @@
-if (typeof require !== 'undefined') {
-    var assert = require('assert');
-    var Promise = require('../lib/promise.js');
-}
-
 "use strict";
 
-describe ('基础功能', function () {
-    it ('Promise() 支持接收函数参数', function () {
+module('基础功能');
+    test ('Promise() 支持接收函数参数', function (assert) {
         assert.throws(function () {
             var promise = new Promise();
-        }, TypeError);
+        }, Error);
     });
 
-    it ('Promise() 实例化时必须使用 `new` 操作符', function () {
+    test ('Promise() 实例化时必须使用 `new` 操作符', function (assert) {
         var noop = function (resolve, reject) {};
         var promise1 = new Promise(noop);
 
         assert.ok(promise1 instanceof Promise);
     });
 
-    it ('解决自己应该得到 undefined 值', function (done) {
+    test ('解决自己应该得到 undefined 值', function (assert) {
+        stop();
         var promise = new Promise(function (resolve) {
             setTimeout(resolve, 0, promise);
         });
 
         promise.then(function (value) {
             assert.equal(value, undefined);
-            done();
+            start();
         });
     });
 
-    it ('拒绝自己应该得到 undefined 值', function (done) {
+    test ('拒绝自己应该得到 undefined 值', function (assert) {
+        stop();
         var promise = new Promise(function (resolve, reject) {
             setTimeout(reject, 0, promise);
         });
 
         promise.then(function (value) {
-            assert(false);
-            done();
+            assert.ok(false);
+            start();
         }, function (reason) {
             assert.equal(reason, undefined);
-            done();
+            start();
         });
     });
 
-    it ('拒绝后应该可以通过 `catch` 捕捉到原因', function (done) {
+    test ('拒绝后应该可以通过 `catch` 捕捉到原因', function (assert) {
+        stop();
         var promise = new Promise(function (_, reject) {
             setTimeout(function () { reject(1); }, 0);
         });
 
         promise['catch'](function (reason) {
             assert.equal(reason, 1);
-            done();
+            start();
         });
     });
 
-    it ('`resolver` 执行抛出异常可以正确处理', function (done) {
+    test ('`resolver` 执行抛出异常可以正确处理', function (assert) {
+        stop();
         var promise = new Promise(function(resolve, reject) {
             resolve(JSON.parse("This ain't JSON"));
         });
 
         promise.then(function(data) {
-            assert(false);
-            done();
+            assert.ok(false);
+            start();
         })['catch'](function(err) {
             assert.ok(err instanceof Error);
-            done();
+            start();
         });
     });
 
-    it ('实例化的 promise 对象 `resolve` 后应该可以多次 then', function (done) {
+    test ('实例化的 promise 对象 `resolve` 后应该可以多次 then', function (assert) {
+        stop();
         var promise = new Promise(function (resolve) {
             setTimeout(function () { resolve(1); }, 0);
         });
@@ -80,11 +80,12 @@ describe ('基础功能', function () {
 
         promise.then(function (value) {
             assert.equal(value, 1);
-            done();
+            start();
         });
     });
 
-    it ('实例化的 promise 对象 `reject` 后应该可以多次 then', function (done) {
+    test ('实例化的 promise 对象 `reject` 后应该可以多次 then', function (assert) {
+        stop();
         var promise = new Promise(function (resolve, reject) {
             setTimeout(function () { reject(1); }, 0);
         });
@@ -95,44 +96,48 @@ describe ('基础功能', function () {
 
         promise.then(0, function (value) {
             assert.equal(value, 1);
-            done();
+            start();
         });
     });
 
-    it ('`then` 传入非函数参数，应该能忽略', function (done) {
+    test ('`then` 传入非函数参数，应该能忽略', function (assert) {
+        stop();
         var promise = new Promise(function (resolve) {
             setTimeout(function () { resolve(1); }, 0);
         });
 
         promise.then(1234).then(new Date()).then(Math.E).then(function (value) {
             assert.equal(value, 1);
-            done();
+            start();
         });
     });
 
-    it ('`resolve` 后，`then` 回调函数可以成功接收到 `resolve` 后的值', function (done) {
+    test ('`resolve` 后，`then` 回调函数可以成功接收到 `resolve` 后的值', function (assert) {
+        stop();
         var promise = new Promise(function (resolve) {
             setTimeout(function () { resolve(1); }, 0);
         });
 
         promise.then(function (value) {
             assert.equal(value, 1);
-            done();
+            start();
         });
     });
 
-    it ('`reject` 后，`then` 回调函数可以成功接收到 `reject` 后的值', function (done) {
+    test ('`reject` 后，`then` 回调函数可以成功接收到 `reject` 后的值', function (assert) {
+        stop();
         var promise = new Promise(function (resolve, reject) {
             setTimeout(function () { reject(1); }, 0);
         });
 
         promise.then(0, function (value) {
             assert.equal(value, 1);
-            done();
+            start();
         });
     });
 
-    it ('不应该被 resolve 多次', function (done) {
+    test ('不应该被 resolve 多次', function (assert) {
+        stop();
         var resolver, rejector, fulfilled = 0, rejected = 0;
         var thenable = {
             then: function(resolve, reject) {
@@ -162,115 +167,122 @@ describe ('基础功能', function () {
             setTimeout(function() {
                 assert.equal(fulfilled, 1);
                 assert.equal(rejected, 0);
-                done();
+                start();
             }, 20);
         }, 20);
     });
 
-    describe('同步', function () {
-        it ('(sync) 解决自己应该得到 undefined 值', function (done) {
-            var promise = new Promise(function (resolve) {
-                resolve(promise);
-            });
-
-            promise.then(function (value) {
-                assert.equal(value, undefined);
-                done();
-            });
+module('基础功能 - 同步调用');
+    test ('(sync) 解决自己应该得到 undefined 值', function (assert) {
+        stop();
+        var promise = new Promise(function (resolve) {
+            resolve(promise);
         });
 
-        it ('(sync) 拒绝自己应该得到 undefined 值', function (done) {
-            var promise = new Promise(function (resolve, reject) {
-                reject(promise);
-            });
-
-            promise.then(function (value) {
-                assert(false);
-                done();
-            }, function (reason) {
-                assert.equal(reason, undefined);
-                done();
-            });
-        });
-
-        it ('(sync) 拒绝后应该可以通过 `catch` 捕捉到原因', function (done) {
-            var promise = new Promise(function (_, reject) {
-                reject(1);
-            });
-
-            promise['catch'](function (reason) {
-                assert.equal(reason, 1);
-                done();
-            });
-        });
-
-        it ('(sync) 实例化的 promise 对象应该可以多次 then', function (done) {
-            var promise = new Promise(function (resolve) {
-                resolve(1);
-            });
-
-            promise.then(function (value) {
-                assert.equal(value, 1);
-            });
-
-            promise.then(function (value) {
-                assert.equal(value, 1);
-                done();
-            });
-        });
-
-        it ('(sync) 实例化的 promise 对象 `reject` 后应该可以多次 then', function (done) {
-            var promise = new Promise(function (resolve, reject) {
-                reject(1);
-            });
-
-            promise.then(0, function (value) {
-                assert.equal(value, 1);
-            });
-
-            promise.then(0, function (value) {
-                assert.equal(value, 1);
-                done();
-            });
-        });
-
-        it ('(sync) `then` 传入非函数参数，应该能忽略', function (done) {
-            var promise = new Promise(function (resolve) {
-                resolve(1);
-            });
-
-            promise.then().then('').then([]).then(function (value) {
-                assert.equal(value, 1);
-                done();
-            });
-        });
-
-        it ('(sync) `resolve` 后，`then` 回调函数可以成功接收到 `resolve` 后的值', function (done) {
-            var promise = new Promise(function (resolve) {
-                resolve(1);
-            });
-
-            promise.then(function (value) {
-                assert.equal(value, 1);
-                done();
-            });
-        });
-
-        it ('(sync) `reject` 后，`then` 回调函数可以成功接收到 `reject` 后的值', function (done) {
-            var promise = new Promise(function (resolve, reject) {
-                reject(1);
-            });
-
-            promise.then(0, function (value) {
-                assert.equal(value, 1);
-                done();
-            });
+        promise.then(function (value) {
+            assert.equal(value, undefined);
+            start();
         });
     });
-});
 
-describe ('链式调用', function () {
-    it ('resolve 链式调用应该可以获取上一个回调的返回值', function (done) {
+    test ('(sync) 拒绝自己应该得到 undefined 值', function (assert) {
+        stop();
+        var promise = new Promise(function (resolve, reject) {
+            reject(promise);
+        });
+
+        promise.then(function (value) {
+            assert.ok(false);
+            start();
+        }, function (reason) {
+            assert.equal(reason, undefined);
+            start();
+        });
+    });
+
+    test ('(sync) 拒绝后应该可以通过 `catch` 捕捉到原因', function (assert) {
+        stop();
+        var promise = new Promise(function (_, reject) {
+            reject(1);
+        });
+
+        promise['catch'](function (reason) {
+            assert.equal(reason, 1);
+            start();
+        });
+    });
+
+    test ('(sync) 实例化的 promise 对象应该可以多次 then', function (assert) {
+        stop();
+        var promise = new Promise(function (resolve) {
+            resolve(1);
+        });
+
+        promise.then(function (value) {
+            assert.equal(value, 1);
+        });
+
+        promise.then(function (value) {
+            assert.equal(value, 1);
+            start();
+        });
+    });
+
+    test ('(sync) 实例化的 promise 对象 `reject` 后应该可以多次 then', function (assert) {
+        stop();
+        var promise = new Promise(function (resolve, reject) {
+            reject(1);
+        });
+
+        promise.then(0, function (value) {
+            assert.equal(value, 1);
+        });
+
+        promise.then(0, function (value) {
+            assert.equal(value, 1);
+            start();
+        });
+    });
+
+    test ('(sync) `then` 传入非函数参数，应该能忽略', function (assert) {
+        stop();
+        var promise = new Promise(function (resolve) {
+            resolve(1);
+        });
+
+        promise.then().then('').then([]).then(function (value) {
+            assert.equal(value, 1);
+            start();
+        });
+    });
+
+    test ('(sync) `resolve` 后，`then` 回调函数可以成功接收到 `resolve` 后的值', function (assert) {
+        stop();
+        var promise = new Promise(function (resolve) {
+            resolve(1);
+        });
+
+        promise.then(function (value) {
+            assert.equal(value, 1);
+            start();
+        });
+    });
+
+    test ('(sync) `reject` 后，`then` 回调函数可以成功接收到 `reject` 后的值', function (assert) {
+        stop();
+        var promise = new Promise(function (resolve, reject) {
+            reject(1);
+        });
+
+        promise.then(0, function (value) {
+            assert.equal(value, 1);
+            start();
+        });
+    });
+
+module('链式调用');
+    test ('resolve 链式调用应该可以获取上一个回调的返回值', function (assert) {
+        stop();
         var promise = new Promise(function (resolve) {
             setTimeout(function () { resolve(1); }, 0);
         });
@@ -281,11 +293,12 @@ describe ('链式调用', function () {
             return ++value;
         }).then(function (value) {
             assert.equal(value, 3);
-            done();
+            start();
         });
     });
 
-    it ('reject 只调用 then 链上的第一个回调', function (done) {
+    test ('reject 只调用 then 链上的第一个回调', function (assert) {
+        stop();
         var promise = new Promise(function (resolve, reject) {
             setTimeout(function () { reject(1); }, 0);
         });
@@ -293,19 +306,20 @@ describe ('链式调用', function () {
         promise.then(0, function (value) {
             value++;
             assert.equal(value, 2);
-            done();
+            start();
             return value;
         }).then(0, function (value) {
-            assert(false);
-            done();
+            assert.ok(false);
+            start();
             return ++value;
         }).then(0, function (value) {
-            assert(false);
-            done();
+            assert.ok(false);
+            start();
         });
     });
 
-    it ('如果回调函数返回一个 promise 对象，则替换当前 promise 对象', function (done) {
+    test ('如果回调函数返回一个 promise 对象，则替换当前 promise 对象', function (assert) {
+        stop();
         var promise = new Promise(function (resolve) {
             setTimeout(function () {
                 resolve(2);
@@ -318,11 +332,12 @@ describe ('链式调用', function () {
             });
         }).then(function (value) {
             assert.equal(value, 3);
-            done();
+            start();
         });
     });
 
-    it ('中途 `reject` 应该能执行正确的 `onReject` 回调', function (done) {
+    test ('中途 `reject` 应该能执行正确的 `onReject` 回调', function (assert) {
+        stop();
         var promise1 = new Promise(function (resolve) {
             setTimeout(function () { resolve(1); }, 0);
         });
@@ -337,135 +352,138 @@ describe ('链式调用', function () {
             assert.equal(value, 1);
             return promise2;
         }, function (reason) { // never invoke
-            assert(false);
-            done();
+            assert.ok(false);
+            start();
         }).then().then(0).then(function (value) { // never invoke
-            assert(false);
-            done();
+            assert.ok(false);
+            start();
         }, function (reason) {
             assert.equal(reason, 2);
-            done();
+            start();
         });
     });
 
-    describe('同步', function () {
-        it ('(sync) resolve 链式调用应该可以获取上一个回调的返回值', function (done) {
-            var promise = new Promise(function (resolve) {
-                resolve(1);
-            });
-
-            promise.then(function (value) {
-                return ++value;
-            }).then(function (value) {
-                return ++value;
-            }).then(function (value) {
-                assert.equal(value, 3);
-                done();
-            });
+module('链式调用 - 同步调用');
+    test ('(sync) resolve 链式调用应该可以获取上一个回调的返回值', function (assert) {
+        stop();
+        var promise = new Promise(function (resolve) {
+            resolve(1);
         });
 
-        it ('(sync) reject 只调用 then 链上的第一个回调', function (done) {
-            var promise = new Promise(function (resolve, reject) {
-                reject(1);
-            });
-
-            promise.then(0, function (value) {
-                value++;
-                assert.equal(value, 2);
-                done();
-                return value;
-            }).then(0, function (value) {
-                assert(false);
-                done();
-                return ++value;
-            }).then(0, function (value) {
-                assert(false);
-                done();
-            });
+        promise.then(function (value) {
+            return ++value;
+        }).then(function (value) {
+            return ++value;
+        }).then(function (value) {
+            assert.equal(value, 3);
+            start();
         });
-
-        it ('(sync) 如果回调函数返回一个 promise 对象，则替换当前 promise 对象', function (done) {
-            var promise = new Promise(function (resolve) {
-                resolve(2);
-            });
-
-            promise.then(function (value) {
-                return new Promise(function (resolve) {
-                    resolve(value + 1);
-                });
-            }).then(function (value) {
-                assert.equal(value, 3);
-                done();
-            });
-        });
-
-        it ('(sync) 中途 `reject` 应该能执行正确的 `onReject` 回调', function (done) {
-            var promise1 = new Promise(function (resolve) {
-                resolve(1);
-            });
-
-            var promise2 = new Promise(function (resolve, reject) {
-                reject(2);
-            });
-
-            promise1.then(function (value) {
-                assert.equal(value, 1);
-                return promise2;
-            }, function (reason) { // never invoke
-                assert(false);
-                done();
-            }).then().then(1).then(function (value) { // never invoke
-                assert(false);
-                done();
-            }, function (reason) {
-                assert.equal(reason, 2);
-                done();
-            });
-        });
-
     });
-});
 
-describe('Promise.cast', function () {
-    it ('cast 普通值', function () {
+    test ('(sync) reject 只调用 then 链上的第一个回调', function (assert) {
+        stop();
+        var promise = new Promise(function (resolve, reject) {
+            reject(1);
+        });
+
+        promise.then(0, function (value) {
+            value++;
+            assert.equal(value, 2);
+            start();
+            return value;
+        }).then(0, function (value) {
+            assert.ok(false);
+            start();
+            return ++value;
+        }).then(0, function (value) {
+            assert.ok(false);
+            start();
+        });
+    });
+
+    test ('(sync) 如果回调函数返回一个 promise 对象，则替换当前 promise 对象', function (assert) {
+        stop();
+        var promise = new Promise(function (resolve) {
+            resolve(2);
+        });
+
+        promise.then(function (value) {
+            return new Promise(function (resolve) {
+                resolve(value + 1);
+            });
+        }).then(function (value) {
+            assert.equal(value, 3);
+            start();
+        });
+    });
+
+    test ('(sync) 中途 `reject` 应该能执行正确的 `onReject` 回调', function (assert) {
+        stop();
+        var promise1 = new Promise(function (resolve) {
+            resolve(1);
+        });
+
+        var promise2 = new Promise(function (resolve, reject) {
+            reject(2);
+        });
+
+        promise1.then(function (value) {
+            assert.equal(value, 1);
+            return promise2;
+        }, function (reason) { // never invoke
+            assert.ok(false);
+            start();
+        }).then().then(1).then(function (value) { // never invoke
+            assert.ok(false);
+            start();
+        }, function (reason) {
+            assert.equal(reason, 2);
+            start();
+        });
+    });
+
+module('Promise.cast');
+    test ('cast 普通值', function (assert) {
         var value = 1;
         var casted = Promise.cast(value);
 
-        assert(casted instanceof Promise);
-        assert(casted !== value);
+        assert.ok(casted instanceof Promise);
+        assert.ok(casted !== value);
     });
 
-    it ('cast null', function (done) {
+    test ('cast null', function (assert) {
+        stop();
         Promise.cast(null).then(function (value) {
             assert.equal(value, null);
-            done();
+            start();
         });
     });
 
-    it ('cast undefined', function (done) {
+    test ('cast undefined', function (assert) {
+        stop();
         Promise.cast(undefined).then(function (value) {
             assert.equal(value, undefined);
-            done();
+            start();
         });
     });
 
-    it ('cast 一个 promise 对象，应该返回该对象', function () {
+    test ('cast 一个 promise 对象，应该返回该对象', function (assert) {
         var promise1 = Promise.resolve(1);
         var promise = Promise.cast(promise1);
         assert.deepEqual(promise1, promise);
     });
 
-    it ('cast 一个 thenable 对象', function () {
+    test ('cast 一个 thenable 对象', function (assert) {
         var thenable = {'then': function () {}};
         var promise = Promise.cast(thenable);
 
         assert.ok(promise instanceof Promise);
         assert.notEqual(thenable, promise);
     });
-});
 
-describe('Promise.resolve', function () {
-    it ('依赖的 thenable 完成后才完成', function (done) {
+module('Promise.resolve');
+    test ('依赖的 thenable 完成后才完成', function (assert) {
+        stop();
         var expectedValue, resolver, thenable, wrapped;
 
         expectedValue = 'the value';
@@ -478,44 +496,56 @@ describe('Promise.resolve', function () {
         wrapped = Promise.resolve(thenable);
 
         wrapped.then(function(value) {
-            assert(value === expectedValue);
-            done();
+            assert.ok(value === expectedValue);
+            start();
         });
 
         resolver(expectedValue);
     })
-});
 
-describe('Promise.all', function () {
-    it('非数组类型的参数，直接 `resolve`', function() {
+module('Promise.all');
+    test ('非数组类型的参数(不传参)，直接 `resolve`', function(assert) {
+        stop();
         Promise.all().then(function (value) {
             assert.equal(value, undefined);
+            start();
         });
+    });
 
+    test ('非数组类型的参数(传对象)，直接 `resolve`', function(assert) {
+        stop();
         Promise.all({}).then(function (value) {
             assert.deepEqual(value, {});
+            start();
         });
+    });
 
+    test ('非数组类型的参数(传字符串)，直接 `resolve`', function(assert) {
+        stop();
         Promise.all('').then(function (value) {
             assert.equal(value, '');
+            start();
         });
     });
 
-    it ('传入空数组应该返回空数组', function (done) {
+    test ('传入空数组应该返回空数组', function (assert) {
+        stop();
         Promise.all([]).then(function(results) {
-            assert(results.length === 0);
-            done();
+            assert.ok(results.length === 0);
+            start();
         });
     });
 
-    it ('数组元素为 null，应该可以正常处理', function (done) {
+    test ('数组元素为 null，应该可以正常处理', function (assert) {
+        stop();
         Promise.all([null]).then(function(results) {
             assert.equal(results[0], null);
-            done();
+            start();
         });
     });
 
-    it ('仅当数组中所有其它 promise 都完成时才完成', function (done) {
+    test ('仅当数组中所有其它 promise 都完成时才完成', function (assert) {
+        stop();
         var firstResolved, secondResolved, firstResolver, secondResolver;
 
         var first = new Promise(function(resolve) {
@@ -541,13 +571,14 @@ describe('Promise.all', function () {
         }, 0);
 
         Promise.all([first, second]).then(function(values) {
-            assert(firstResolved);
-            assert(secondResolved);
-            done();
+            assert.ok(firstResolved);
+            assert.ok(secondResolved);
+            start();
         });
     });
 
-    it ('数组中的一个 reject 后，立刻 reject', function (done) {
+    test ('数组中的一个 reject 后，立刻 reject', function (assert) {
+        stop();
         var firstResolver, secondResolver;
 
         var first = new Promise(function(resolve, reject) {
@@ -576,15 +607,16 @@ describe('Promise.all', function () {
         });
 
         Promise.all([first, second]).then(function() {
-            assert(false);
+            assert.ok(false);
         }, function() {
-            assert(firstWasRejected);
-            assert(!secondCompleted);
-            done();
+            assert.ok(firstWasRejected);
+            assert.ok(!secondCompleted);
+            start();
         });
     });
 
-    it ('已解决后的数组值，其顺序应该与输入时保持一致', function (done) {
+    test ('已解决后的数组值，其顺序应该与输入时保持一致', function (assert) {
+        stop();
         var firstResolver, secondResolver, thirdResolver;
 
         var first = new Promise(function(resolve, reject) {
@@ -604,15 +636,16 @@ describe('Promise.all', function () {
         secondResolver.resolve(2);
 
         Promise.all([first, second, third]).then(function(results) {
-            assert(results.length === 3);
-            assert(results[0] === 1);
-            assert(results[1] === 2);
-            assert(results[2] === 3);
-            done();
+            assert.ok(results.length === 3);
+            assert.ok(results[0] === 1);
+            assert.ok(results[1] === 2);
+            assert.ok(results[2] === 3);
+            start();
         });
     });
 
-    it ('一组包含 promises, thenable, 及普通类型值的数组，应该正确处理', function (done) {
+    test ('一组包含 promises, thenable, 及普通类型值的数组，应该正确处理', function (assert) {
+        stop();
         var promise = new Promise(function(resolve) { resolve(1); });
         var syncThenable = { then: function (onFulfilled) { onFulfilled(2); } };
         var asyncThenable = { then: function (onFulfilled) { setTimeout(function() { onFulfilled(3); }, 0); } };
@@ -620,48 +653,52 @@ describe('Promise.all', function () {
 
         Promise.all([promise, syncThenable, asyncThenable, nonPromise]).then(function(results) {
             assert.deepEqual(results, [1, 2, 3, 4]);
-            done();
+            start();
         });
     });
-});
 
-describe('Promise.reject', function () {
-    it('应该可以正确 reject', function () {
+module('Promise.reject');
+    test ('应该可以正确 reject', function (assert) {
+        stop();
         var reason = 'the reason', promise = Promise.reject(reason);
 
         promise.then(function(){
-            assert(false, 'should not fulfill');
+            start();
+            assert.ok(false, 'should not fulfill');
         }, function(actualReason){
+            start();
             assert.equal(reason, actualReason);
         });
     });
-});
 
-describe('assimilation (选自 es6-promise)', function() {
-    it('should assimilate if `resolve` is called with a fulfilled promise', function(done) {
+module('assimilation (选自 es6-promise)');
+    test ('should assimilate if `resolve` is called with a fulfilled promise', function(assert) {
+        stop();
         var originalPromise = new Promise(function(resolve) { resolve('original value'); });
         var promise = new Promise(function(resolve) { resolve(originalPromise); });
 
         promise.then(function(value) {
             assert.equal(value, 'original value');
-            done();
+            start();
         });
     });
 
-    it('should assimilate if `resolve` is called with a rejected promise', function(done) {
+    test ('should assimilate if `resolve` is called with a rejected promise', function(assert) {
+        stop();
         var originalPromise = new Promise(function(resolve, reject) { reject('original reason'); });
         var promise = new Promise(function(resolve) { resolve(originalPromise); });
 
         promise.then(function() {
-            assert(false);
-            done();
+            assert.ok(false);
+            start();
         }, function(reason) {
             assert.equal(reason, 'original reason');
-            done();
+            start();
         });
     });
 
-    it('should assimilate if `resolve` is called with a fulfilled thenable', function(done) {
+    test ('should assimilate if `resolve` is called with a fulfilled thenable', function(assert) {
+        stop();
         var originalThenable = {
             then: function (onFulfilled) {
                 setTimeout(function() { onFulfilled('original value'); }, 0);
@@ -671,11 +708,12 @@ describe('assimilation (选自 es6-promise)', function() {
 
         promise.then(function(value) {
             assert.equal(value, 'original value');
-            done();
+            start();
         });
     });
 
-    it('should assimilate if `resolve` is called with a rejected thenable', function(done) {
+    test ('should assimilate if `resolve` is called with a rejected thenable', function(assert) {
+        stop();
         var originalThenable = {
             then: function (onFulfilled, onRejected) {
                 setTimeout(function() { onRejected('original reason'); }, 0);
@@ -684,41 +722,44 @@ describe('assimilation (选自 es6-promise)', function() {
         var promise = new Promise(function(resolve) { resolve(originalThenable); });
 
         promise.then(function() {
-            assert(false);
-            done();
+            assert.ok(false);
+            start();
         }, function(reason) {
             assert.equal(reason, 'original reason');
-            done();
+            start();
         });
     });
 
 
-    it('should assimilate two levels deep, for fulfillment', function(done) {
+    test ('should assimilate two levels deep, for fulfillment', function(assert) {
+        stop();
         var originalPromise = new Promise(function(resolve) { resolve('original value'); });
         var nextPromise = new Promise(function(resolve) { resolve(originalPromise); });
         var promise = new Promise(function(resolve) { resolve(nextPromise); });
 
         promise.then(function(value) {
             assert.equal(value, 'original value');
-            done();
+            start();
         });
     });
 
-    it('should assimilate two levels deep, for rejection', function(done) {
+    test ('should assimilate two levels deep, for rejection', function(assert) {
+        stop();
         var originalPromise = new Promise(function(resolve, reject) { reject('original reason'); });
         var nextPromise = new Promise(function(resolve) { resolve(originalPromise); });
         var promise = new Promise(function(resolve) { resolve(nextPromise); });
 
         promise.then(function() {
-            assert(false);
-            done();
+            assert.ok(false);
+            start();
         }, function(reason) {
             assert.equal(reason, 'original reason');
-            done();
+            start();
         });
     });
 
-    it('should assimilate three levels deep, mixing thenables and promises (fulfilled case)', function(done) {
+    test ('should assimilate three levels deep, mixing thenables and promises (fulfilled case)', function(assert) {
+        stop();
         var originalPromise = new Promise(function(resolve) { resolve('original value'); });
         var intermediateThenable = {
             then: function (onFulfilled) {
@@ -729,11 +770,12 @@ describe('assimilation (选自 es6-promise)', function() {
 
         promise.then(function(value) {
             assert.equal(value, 'original value');
-            done();
+            start();
         });
     });
 
-    it('should assimilate three levels deep, mixing thenables and promises (rejected case)', function(done) {
+    test ('should assimilate three levels deep, mixing thenables and promises (rejected case)', function(assert) {
+        stop();
         var originalPromise = new Promise(function(resolve, reject) { reject('original reason'); });
         var intermediateThenable = {
             then: function (onFulfilled) {
@@ -743,35 +785,35 @@ describe('assimilation (选自 es6-promise)', function() {
         var promise = new Promise(function(resolve) { resolve(intermediateThenable); });
 
         promise.then(function() {
-            assert(false);
-            done();
+            assert.ok(false);
+            start();
         }, function(reason) {
             assert.equal(reason, 'original reason');
-            done();
+            start();
         });
     });
-});
 
-describe('alias (浏览器不支持的自定义别名或特性)', function () {
-    it ('`done` 回调应该能正常处理 `resolve` 的值', function (done) {
+module('alias (浏览器不支持的自定义别名或特性)');
+    test ('`done` 回调应该能正常处理 `resolve` 的值', function (assert) {
+        stop();
         var promise = new Promise(function (resolve) {
             setTimeout(function () { resolve(1); }, 0);
         });
 
         promise.done(function (value) {
             assert.equal(value, 1);
-            done();
+            start();
         });
     });
 
-    it ('(sync) `done` 回调应该能正常处理 `resolve` 的值', function (done) {
+    test ('(sync) `done` 回调应该能正常处理 `resolve` 的值', function (assert) {
+        stop();
         var promise = new Promise(function (resolve) {
             resolve(1);
         });
 
         promise.done(function (value) {
             assert.equal(value, 1);
-            done();
+            start();
         });
     });
-});

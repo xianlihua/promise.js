@@ -1,14 +1,10 @@
 {
     "name": "promise.js",
-    "version": "0.0.1",
-    "description": "a promise/A+ impplement",
-    "private": false,
+    "version": "0.0.2",
+    "description": "es6 promise 的跨浏览器及 Node.js 环境的实现",
+    "author": "xianlihua <xianlihua@gmail.com>",
     "dependencies": {},
-    "devDependencies": {
-        "mocha": "*"
-    },
-    "scripts": {
-        "test": "mocha ./test/test.promise.js -R dot",
-        "start": "npm run test"
-    }
+    "devDependencies": {},
+    "scripts": {},
+    "license": "MIT"
 }
